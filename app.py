@@ -1,14 +1,14 @@
-# app.py
-
 import streamlit as st
 import math
+import matplotlib.pyplot as plt
+import numpy as np
 
 def hitung_eoq(D, S, H):
     """
     Fungsi untuk menghitung Economic Order Quantity (EOQ).
     """
     if D <= 0 or S <= 0 or H <= 0:
-        return None, "Nilai permintaan tahunan, biaya pemesanan, dan biaya penyimpanan harus lebih besar dari nol."
+        return None, None, None, "Nilai permintaan tahunan, biaya pemesanan, dan biaya penyimpanan harus lebih besar dari nol."
     
     eoq = math.sqrt((2 * D * S) / H)
     
@@ -25,7 +25,7 @@ def hitung_eoq(D, S, H):
 # --- Judul dan Deskripsi Aplikasi ---
 st.set_page_config(
     page_title="Kalkulator EOQ Interaktif",
-    page_icon="📈",
+    page_icon="�",
     layout="centered"
 )
 
@@ -96,8 +96,46 @@ if st.button("Hitung EOQ"):
         - **Jumlah Pesanan per Tahun:** Berapa kali Anda perlu melakukan pemesanan dalam setahun berdasarkan EOQ.
         - **Total Biaya Persediaan:** Jumlah dari biaya pemesanan total dan biaya penyimpanan total pada tingkat EOQ.
         """)
+
+        st.markdown("---")
+        st.header("Visualisasi Biaya Persediaan")
+
+        # Generate data for the plot
+        # Create a range of order quantities around the EOQ
+        min_q = max(1, int(eoq_result * 0.1))
+        max_q = int(eoq_result * 2.0) + 1
+        q_values = np.linspace(min_q, max_q, 500)
+
+        # Calculate ordering cost, holding cost, and total cost for each Q
+        ordering_costs = (permintaan_tahunan / q_values) * biaya_pemesanan
+        holding_costs = (q_values / 2) * biaya_penyimpanan
+        total_costs = ordering_costs + holding_costs
+
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(q_values, ordering_costs, label='Biaya Pemesanan (D/Q * S)', color='red')
+        ax.plot(q_values, holding_costs, label='Biaya Penyimpanan (Q/2 * H)', color='green')
+        ax.plot(q_values, total_costs, label='Total Biaya Persediaan', color='blue', linewidth=2)
+
+        # Mark the EOQ point
+        ax.axvline(eoq_result, color='purple', linestyle='--', label=f'EOQ = {eoq_result:,.2f}')
+        ax.plot(eoq_result, total_cost_result, 'o', color='purple', markersize=8) # Mark the EOQ point
+
+        ax.set_title('Kurva Biaya Persediaan vs. Kuantitas Pesanan')
+        ax.set_xlabel('Kuantitas Pesanan (Q)')
+        ax.set_ylabel('Biaya (Rp)')
+        ax.legend()
+        ax.grid(True, linestyle='--', alpha=0.7)
+        ax.set_ylim(bottom=0) # Ensure y-axis starts from 0
+        ax.set_xlim(left=0) # Ensure x-axis starts from 0
+
+        st.pyplot(fig)
+        st.markdown("""
+        Grafik di atas menunjukkan bagaimana total biaya persediaan berubah
+        seiring dengan perubahan kuantitas pesanan. Titik terendah pada kurva
+        Total Biaya Persediaan adalah Economic Order Quantity (EOQ).
+        """)
     else:
         st.warning("Silakan masukkan nilai yang valid untuk semua parameter.")
 
 st.markdown("---")
-st.markdown("Dibuat dengan cinta untuk tugas Matematika Terapan.")
